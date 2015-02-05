@@ -29,7 +29,6 @@ int main(){
 	int ligne, colonne, i, j;
 	
 	// Initialisation
-	#pragma omp parallel for shared(a, b) private(i, j)
 	for(i=0; i<N; i++){
 	
 		for(j=0; j<N; j++){
@@ -44,7 +43,6 @@ int main(){
 	afficher_matrice("B", b);
 	
 	// Calcul
-	#pragma omp parallel for shared(a, b, c) private(ligne, colonne, i, res)
 	for(ligne=0; ligne<N; ligne++){
 
 		for(colonne=0; colonne<N; colonne++){

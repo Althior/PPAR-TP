@@ -2,7 +2,7 @@ LIBS= -fopenmp
 OBJ= ex1.o
 SOURCE= ex1.c
 FLAGS= -Wall -g
-EXE= ex1
+EXE= ex2
 
 all: build run
 

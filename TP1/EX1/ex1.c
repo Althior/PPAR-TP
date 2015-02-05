@@ -3,10 +3,8 @@
 
 int main(){
 	
-	int moi = 0;
-	int nombreThreads = 4;
-	omp_set_num_threads(nombreThreads);
-	
+	// Variables propre à chaque thread
+	int nombreThreads, moi;
 	
 	#pragma omp parallel private(nombreThreads, moi)
 	{
