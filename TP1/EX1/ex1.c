@@ -6,7 +6,7 @@ int main(){
 	// Variables propre à chaque thread
 	int nombreThreads, moi;
 	
-	#pragma omp parallel private(nombreThreads, moi)
+	#pragma omp parallel schedule(static) private(nombreThreads, moi)
 	{
 		nombreThreads = omp_get_num_threads();
 		moi = omp_get_thread_num();

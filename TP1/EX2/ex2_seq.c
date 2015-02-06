@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include <omp.h>
+#include <sys/time.h>
 
 // Taille des matrices pour le calcul
-#define N 5
+#define N 200
 
 void afficher_matrice(char *nom, float mat[N][N]);
 
@@ -26,7 +27,11 @@ int main(){
 	
 	// c = a*b
 	float a[N][N], b[N][N], c[N][N], res;
+	double ecoule;
 	int ligne, colonne, i, j;
+	struct timeval tv0, tv1;
+	
+	gettimeofday(&tv0, 0);
 	
 	// Initialisation
 	for(i=0; i<N; i++){
@@ -39,8 +44,8 @@ int main(){
 	}
 	
 	// Affichage des matrices
-	afficher_matrice("A", a);
-	afficher_matrice("B", b);
+	//afficher_matrice("A", a);
+	//afficher_matrice("B", b);
 	
 	// Calcul
 	for(ligne=0; ligne<N; ligne++){
@@ -59,7 +64,11 @@ int main(){
 		}
 	}
 
-	afficher_matrice("C", c);
+	//afficher_matrice("C", c);
 	
+	gettimeofday(&tv1, 0);
+	ecoule = (double)((tv1.tv_sec-tv0.tv_sec)*10e6 + tv1.tv_usec - tv0.tv_usec) / 10e6;
+	
+	printf("Temps écoulé : %.6f secondes\n", ecoule);	
 	return 0;
 }
