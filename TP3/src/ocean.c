@@ -6,18 +6,19 @@
 #include <mpi.h>
 #include "ocean.h"
 
-
 /* constants for the ocean */
 #define N 40
 #define M 20
-#define WALL 100
+#define WALL 3
 #define STEP 150000
-#define RATIO 10
+#define RATIO 50
 
 void update_ocean_part(fish_t *ocean, int n, int m, int *ns_north, int *nt_north, int *ns_south, int *nt_south);
 void inject_ocean(fish_t *ocean, int n, int m, int ns, int nt);
+void inject_ocean2(fish_t *ocean, int n, int m, int ns, int nt);
 
-/* I
+
+/*
   Injecte un nombre de requins et thons dans un océan (sur des emplacements libres)
   On pourrait parcourir de manière itérative l'océan pour trouver un emplacement libre à coup sûr s'il en existe un.
   Cependant, pour éviter un placement systématique, on préfère utiliser un rand() avec un risque de ne pas trouver d'emplacement libre s'il en reste peu.
@@ -26,8 +27,8 @@ void inject_ocean(fish_t *ocean, int n, int m, int ns, int nt){
 
   int rand_i, rand_j, nbTentatives = 0;
 
-  // A partir de 50 tentatives infructeuses on considère qu'il n'y a plus de places
-  while( (ns != 0 && nt != 0) || nbTentatives < 500){
+  // A partir de 500 tentatives infructeuses on considère qu'il n'y a plus de places
+  while( (ns != 0 && nt != 0) && nbTentatives < 5000){
 
     rand_i = rand() % n;
     rand_j = rand() % m;
@@ -37,11 +38,15 @@ void inject_ocean(fish_t *ocean, int n, int m, int ns, int nt){
 
       if(nt){
 
-        ocean[rand_i*m+rand_j].type 'T';
+        ocean[rand_i*m+rand_j].type = 'T';
+        nt--;
       }
       else{
 
-        ocean[rand_i*m+rand_j].type 'S';
+        ocean[rand_i*m+rand_j].type = 'S';
+        ns--;
+        printf("(%i,%i)\n", rand_i, rand_j);
+        exit(0);
       }
       nbTentatives = 0;
     }
@@ -50,6 +55,34 @@ void inject_ocean(fish_t *ocean, int n, int m, int ns, int nt){
       nbTentatives++;
     }
   }
+}
+
+/* Injection océan "sûre" */
+void inject_ocean2(fish_t *ocean, int n, int m, int ns, int nt){
+
+	int i, j; 
+
+	printf("%i s et %i t\n", ns, nt);
+	for(i=0; i<n && (ns != 0 || nt != 0); i++){
+	
+		for(j=0;j<m && (ns != 0 || nt != 0); j++){
+		
+			// Emplacement libre, on remplace
+			if(ocean[i*m+j].type == 'F'){
+			
+				if(nt){
+
+				  ocean[i*m+j].type = 'T';
+				  nt--;
+				}
+				else{
+
+				  ocean[i*m+j].type = 'S';
+				  ns--;
+				}
+			}
+		}
+	}
 }
 
 /* Met à jour une section de l'océan général */
@@ -91,7 +124,7 @@ void update_ocean_part(fish_t *ocean, int n, int m, int *ns_north, int *nt_north
         }
         else if (rd < 75) { /* -> S */
           next_i = (i + 1);
-          if (next_i > n) {	estSorti = 1; }
+          if (next_i >= n) {	estSorti = 1; }
           next_j = j;
         }
         else { /* -> W */
@@ -130,7 +163,7 @@ void update_ocean_part(fish_t *ocean, int n, int m, int *ns_north, int *nt_north
                 break;
             }
 
-            ocean[i*m+j].moved = 1;
+            //ocean[i*m+j].moved = 1;
           }
 
           // L'ancienne case est dorénavant vide
@@ -163,12 +196,14 @@ void update_ocean_part(fish_t *ocean, int n, int m, int *ns_north, int *nt_north
 int main (int argc, char * argv[])
 {
 	int rang, nbproc, i;
-  MPI_Status status;
-
+  	MPI_Status status;
+	MPI_Request myRequest;
+	
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(MPI_COMM_WORLD, &rang);
 	MPI_Comm_size(MPI_COMM_WORLD, &nbproc);
 
+	fish_t *ocean;
 
 	// Calcul processeur suivant/precedent
 	int procprec = (rang-1)%nbproc;
@@ -176,7 +211,7 @@ int main (int argc, char * argv[])
 
 	int procsuivant = (rang+1)%nbproc;
 
-	/* Gestion de l'océean en parallèle */
+	/* Gestion de l'océan en parallèle */
 	fish_t *oceanrec = (fish_t *)malloc(N*M*sizeof(fish_t)/nbproc);
 	if(oceanrec == NULL){
 
@@ -186,10 +221,10 @@ int main (int argc, char * argv[])
 	}
 
 	int nbS_Nord, nbT_Nord, nbS_Sud, nbT_Sud; // Nombre de poissons à injecter pour les voisins
-	int inkSN, injSS, inkTN, injTS; // Nombres de poissons à injecter
+	int injSN, injSS, injTN, injTS; // Nombres de poissons à injecter
 
 	// Création du type MPI_FISH
-  int tailleChamp[2] = {1,1};
+ 	int tailleChamp[2] = {1,1};
 	MPI_Aint decChamp[2] = {0,1};
 	MPI_Datatype typeChamp[2] = {MPI_CHAR, MPI_CHAR};
 	MPI_Datatype MPI_FISH;
@@ -200,22 +235,24 @@ int main (int argc, char * argv[])
 		MPI_Finalize();
 		exit(1);
 	}
+	
 	MPI_Type_commit(&MPI_FISH);
 
 	// Allocation de l'ocean & affichage
 	if (rang == 0){
 
- 		fish_t *ocean = (fish_t *)malloc(N*M*sizeof(fish_t));
+ 		ocean = (fish_t *)malloc(N*M*sizeof(fish_t));
 
-    if(ocean == NULL){
+		if(ocean == NULL){
 
-      fprintf(stderr, "Erreur lors de l'allocation d'ocean\n");
-      MPI_Finalize();
-      exit(1);
-    }
-  	init_ocean(ocean, N, M, RATIO);
-  	printf(CLS "\n");
-  	display_ocean(ocean, N, M);
+		  fprintf(stderr, "Erreur lors de l'allocation d'ocean\n");
+		  MPI_Finalize();
+		  exit(1);
+		}
+		
+	  	init_ocean(ocean, N, M, RATIO);
+	  	printf(CLS "\n");
+	  	display_ocean(ocean, N, M);
 	}
 
 
@@ -228,27 +265,28 @@ int main (int argc, char * argv[])
     update_ocean_part(oceanrec, N/nbproc, M, &nbS_Nord, &nbT_Nord, &nbS_Sud, &nbT_Sud);
 
     // Envoi requins/thons aux voisins
-    MPI_BSend(nbS_Nord, 1, MPI_INT,procprec, 0, MPI_COMM_WORLD);
-    MPI_BSend(nbT_Nord, 1, MPI_INT, procprec, 0, MPI_COMM_WORLD);
-    MPI_BSend(nbS_Sud, 1, MPI_INT, procsuivant, 0, MPI_COMM_WORLD);
-    MPI_BSend(nbT_Sud, 1, MPI_INT, procsuivant, 0, MPI_COMM_WORLD);
+    MPI_Isend(&nbS_Nord, 1, MPI_INT, procprec, 0, MPI_COMM_WORLD, &myRequest);
+    MPI_Isend(&nbT_Nord, 1, MPI_INT, procprec, 0, MPI_COMM_WORLD, &myRequest);
+    MPI_Isend(&nbS_Sud, 1, MPI_INT, procsuivant, 0, MPI_COMM_WORLD, &myRequest);
+    MPI_Isend(&nbT_Sud, 1, MPI_INT, procsuivant, 0, MPI_COMM_WORLD, &myRequest);
 
     // Reception
-    MPI_Recv(injSN, 1, MPI_INT, procprec, 0, MPI_COMM_WORLD, &status);
-    MPI_Recv(injTN, 1, MPI_INT, procprec, 0, MPI_COMM_WORLD, &status);
-    MPI_Recv(injSS, 1, MPI_INT, procsuivant, 0, MPI_COMM_WORLD, &status);
-    MPI_Recv(injTS, 1, MPI_INT, procsuivant, 0, MPI_COMM_WORLD, &status);
+    MPI_Recv(&injSN, 1, MPI_INT, procprec, 0, MPI_COMM_WORLD, &status);
+    MPI_Recv(&injTN, 1, MPI_INT, procprec, 0, MPI_COMM_WORLD, &status);
+    MPI_Recv(&injSS, 1, MPI_INT, procsuivant, 0, MPI_COMM_WORLD, &status);
+    MPI_Recv(&injTS, 1, MPI_INT, procsuivant, 0, MPI_COMM_WORLD, &status);
 
-    // A compléter
-		inject_ocean(oceanrec, N/nbproc, M, inkSN+injSS, inkTN+injTS);
+    // Remise des poissons
+	inject_ocean2(oceanrec, N/nbproc, M, injSN+injSS, injTN+injTS);
 
-	  MPI_Gather(oceanrec, N*M/nbproc, MPI_FISH, ocean, N*M/nbproc, MPI_FISH, 0, MPI_COMM_WORLD);
+	MPI_Gather(oceanrec, N*M/nbproc, MPI_FISH, ocean, N*M/nbproc, MPI_FISH, 0, MPI_COMM_WORLD);
 
     // Affichage
     if(rang == 0){
 
       printf(CLS "\n");
       display_ocean(ocean, N, M);
+      printf("%i\n", i);
     }
   }
 
