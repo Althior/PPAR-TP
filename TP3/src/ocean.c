@@ -63,22 +63,26 @@ void inject_ocean2(fish_t *ocean, int n, int m, int ns, int nt){
 	int i, j; 
 
 	printf("%i s et %i t\n", ns, nt);
+
 	for(i=0; i<n && (ns != 0 || nt != 0); i++){
+
+		for(j=0;j<m  && (ns != 0 || nt != 0); j++){
 	
-		for(j=0;j<m && (ns != 0 || nt != 0); j++){
-		
-			// Emplacement libre, on remplace
-			if(ocean[i*m+j].type == 'F'){
+			if(ns > 0){
 			
-				if(nt){
-
-				  ocean[i*m+j].type = 'T';
-				  nt--;
+				if(ocean[i*m+j].type == 'F' || ocean[i*m+j].type == 'T'){
+				
+					ocean[i*m+j].type = 'S';
+				  	ns--;
 				}
-				else{
-
-				  ocean[i*m+j].type = 'S';
-				  ns--;
+			}
+			else if(nt > 0){
+			
+			
+				if(ocean[i*m+j].type == 'F'){
+				
+					ocean[i*m+j].type = 'T';
+				  	nt--;
 				}
 			}
 		}
@@ -106,7 +110,9 @@ void update_ocean_part(fish_t *ocean, int n, int m, int *ns_north, int *nt_north
   *nt_south = 0;
 
   for (i = 0; i < n; i++) {
+  
     for (j = 0; j < m; j++) {
+    
       if (ocean[i*m+j].moved == 0) {
 
         estSorti = 0;
@@ -124,7 +130,7 @@ void update_ocean_part(fish_t *ocean, int n, int m, int *ns_north, int *nt_north
         }
         else if (rd < 75) { /* -> S */
           next_i = (i + 1);
-          if (next_i >= n) {	estSorti = 1; }
+          if (next_i >= n) { estSorti = 1; }
           next_j = j;
         }
         else { /* -> W */
@@ -133,37 +139,36 @@ void update_ocean_part(fish_t *ocean, int n, int m, int *ns_north, int *nt_north
           if (next_j == -1) next_j = m - 1;
         }
 
+		// Le poisson n'est plus dans la partie de l'océan
         if (estSorti) {
 
           // Envoyer le poisson au voisin prédescesseur
           if (next_i < 0) {
 
-            switch (ocean[i*m+j].type){
+		        switch (ocean[i*m+j].type){
 
-              case 'S':
-                *ns_north += 1;
-                break;
+		          case 'S':
+		            *ns_north += 1;
+		            break;
 
-              case 'T':
-                *nt_north += 1;
-                break;
-            }
+		          case 'T':
+		            *nt_north += 1;
+		            break;
+		        }
           }
           // Envoyer le poisson au voisin successeur
           else if (next_i > n) {
 
-            switch (ocean[i*m+j].type) {
+		        switch (ocean[i*m+j].type) {
 
-              case 'S':
-                *ns_south += 1;
-                break;
+		          case 'S':
+		            *ns_south += 1;
+		            break;
 
-              case 'T':
-                *nt_south += 1;
-                break;
-            }
-
-            //ocean[i*m+j].moved = 1;
+		          case 'T':
+		            *nt_south += 1;
+		            break;
+		        }
           }
 
           // L'ancienne case est dorénavant vide
@@ -216,8 +221,9 @@ int main (int argc, char * argv[])
 	if(oceanrec == NULL){
 
     fprintf(stderr, "Erreur lors de l'allocation d'oceanrec\n");
-    MPI_Finalize();
-    exit(1);
+    
+		MPI_Finalize();
+		exit(1);
 	}
 
 	int nbS_Nord, nbT_Nord, nbS_Sud, nbT_Sud; // Nombre de poissons à injecter pour les voisins
@@ -236,7 +242,12 @@ int main (int argc, char * argv[])
 		exit(1);
 	}
 	
-	MPI_Type_commit(&MPI_FISH);
+	if(MPI_Type_commit(&MPI_FISH) != MPI_SUCCESS){
+	
+		fprintf(stderr, "Erreur lors du commit du type MPI_FISH\n");
+		MPI_Finalize();
+		exit(1);
+	}
 
 	// Allocation de l'ocean & affichage
 	if (rang == 0){
@@ -259,26 +270,79 @@ int main (int argc, char * argv[])
   for (i = 0; i < WALL; i++) {
 
     /* On divise l'océan selon le nombre de processeurs, chaque processeur possède une "macro-ligne" */
-	  MPI_Scatter(ocean, (N*M)/nbproc, MPI_FISH, oceanrec, N*M/nbproc, MPI_FISH, 0, MPI_COMM_WORLD);
+	if(MPI_Scatter(ocean, (N*M)/nbproc, MPI_FISH, oceanrec, N*M/nbproc, MPI_FISH, 0, MPI_COMM_WORLD) != MPI_SUCCESS){
+	
+		 fprintf(stderr, "Erreur lors du découpage de l'océan entre processus\n");
+		 MPI_Finalize();
+		 exit(1);
+	}
 
     usleep(STEP);
     update_ocean_part(oceanrec, N/nbproc, M, &nbS_Nord, &nbT_Nord, &nbS_Sud, &nbT_Sud);
 
     // Envoi requins/thons aux voisins
-    MPI_Isend(&nbS_Nord, 1, MPI_INT, procprec, 0, MPI_COMM_WORLD, &myRequest);
-    MPI_Isend(&nbT_Nord, 1, MPI_INT, procprec, 0, MPI_COMM_WORLD, &myRequest);
-    MPI_Isend(&nbS_Sud, 1, MPI_INT, procsuivant, 0, MPI_COMM_WORLD, &myRequest);
-    MPI_Isend(&nbT_Sud, 1, MPI_INT, procsuivant, 0, MPI_COMM_WORLD, &myRequest);
+    if(MPI_Isend(&nbS_Nord, 1, MPI_INT, procprec, 0, MPI_COMM_WORLD, &myRequest) != MPI_SUCCESS){
+    
+    	fprintf(stderr, "Erreur lors de l'envoi du premier message\n");
+		MPI_Finalize();
+		exit(1);
+    }
+    
+    MPI_Isend(&nbT_Nord, 1, MPI_INT, procprec, 0, MPI_COMM_WORLD, &myRequest) != MPI_SUCCESS){
+    
+    	fprintf(stderr, "Erreur lors de l'envoi du second message\n");
+		MPI_Finalize();
+		exit(1);
+    }
+    
+    MPI_Isend(&nbS_Sud, 1, MPI_INT, procsuivant, 0, MPI_COMM_WORLD, &myRequest) != MPI_SUCCESS){
+    
+    	fprintf(stderr, "Erreur lors de l'envoi du troisième message\n");
+		MPI_Finalize();
+		exit(1);
+    }
+    
+    MPI_Isend(&nbT_Sud, 1, MPI_INT, procsuivant, 0, MPI_COMM_WORLD, &myRequest) != MPI_SUCCESS){
+    
+    	fprintf(stderr, "Erreur lors de l'envoi du quatrième message\n");
+		MPI_Finalize();
+		exit(1);
+    }
 
     // Reception
-    MPI_Recv(&injSN, 1, MPI_INT, procprec, 0, MPI_COMM_WORLD, &status);
-    MPI_Recv(&injTN, 1, MPI_INT, procprec, 0, MPI_COMM_WORLD, &status);
-    MPI_Recv(&injSS, 1, MPI_INT, procsuivant, 0, MPI_COMM_WORLD, &status);
-    MPI_Recv(&injTS, 1, MPI_INT, procsuivant, 0, MPI_COMM_WORLD, &status);
+    MPI_Recv(&injSN, 1, MPI_INT, procprec, 0, MPI_COMM_WORLD, &status) != MPI_SUCCESS){
+    
+    	fprintf(stderr, "Erreur lors de la réception du premier message\n");
+		MPI_Finalize();
+		exit(1);
+    }
+    
+    MPI_Recv(&injTN, 1, MPI_INT, procprec, 0, MPI_COMM_WORLD, &status) != MPI_SUCCESS){
+    
+    	fprintf(stderr, "Erreur lors de la réception du deuxième message\n");
+		MPI_Finalize();
+		exit(1);
+    }
+    
+    MPI_Recv(&injSS, 1, MPI_INT, procsuivant, 0, MPI_COMM_WORLD, &status) != MPI_SUCCESS){
+    
+    	fprintf(stderr, "Erreur lors de la réception du troisième message\n");
+		MPI_Finalize();
+		exit(1);
+    }
+    
+    MPI_Recv(&injTS, 1, MPI_INT, procsuivant, 0, MPI_COMM_WORLD, &status) != MPI_SUCCESS){
+    
+    	fprintf(stderr, "Erreur lors de la réception du quatrième message\n");
+		MPI_Finalize();
+		exit(1);
+    }
 
     // Remise des poissons
 	inject_ocean2(oceanrec, N/nbproc, M, injSN+injSS, injTN+injTS);
 
+	// Synchroniser ici
+	
 	MPI_Gather(oceanrec, N*M/nbproc, MPI_FISH, ocean, N*M/nbproc, MPI_FISH, 0, MPI_COMM_WORLD);
 
     // Affichage
@@ -291,11 +355,12 @@ int main (int argc, char * argv[])
   }
 
   if (rang == 0) {
+  
   	free(ocean);
   }
 
 	free(oceanrec);
 	MPI_Finalize();
-  return 0;
+  	return 0;
 } /* main */
 
