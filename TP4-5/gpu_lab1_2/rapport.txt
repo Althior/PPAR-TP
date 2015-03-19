@@ -1,0 +1,3 @@
+2) dans le cas decroissant, on commence par aditionner/soustraire les nombres les plus petits contrairement au cas inverse ou l'arrondi induit une imprécision.
+
+3) soit un thread calcule un bloc continu de la série soit on divise la serie de taille n en m parties et chaque thread calcule l'element num_thread de chaque partie.
