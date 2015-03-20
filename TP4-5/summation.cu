@@ -45,11 +45,11 @@ int main(int argc, char ** argv)
     // Run CPU version
     double start_time = getclock();
     float log2 = log2_series(data_size);
-    float log2_dec = log2_series_dec(data_size);
+    //float log2_dec = log2_series_dec(data_size);
     double end_time = getclock();
     
     printf("CPU result: %.15f\n", log2);
-    printf("CPU result: %.15f (dec)\n", log2_dec);
+    //printf("CPU result: %.15f (dec)\n", log2_dec);
     printf(" log(2)=    %f\n", log(2.0));
     printf(" time=%fs\n", end_time - start_time);
     
@@ -67,8 +67,9 @@ int main(int argc, char ** argv)
     int results_size = num_threads;
     float * data_out_cpu;
     // Allocating output data on CPU
-	if ((data_out_cpu = (float*) malloc(num_threads*sizeof(float))) == NULL) {printf("erreur allocation CPU"); exit(0);}
-
+	// Version calcul CPU if ((data_out_cpu = (float*) malloc(num_threads*sizeof(float))) == NULL) {printf("erreur allocation CPU"); exit(0);}
+	if ((data_out_cpu = (float*) malloc(blocks_in_grid*sizeof(float))) == NULL) {printf("erreur allocation CPU"); exit(0);}
+	
 	// Allocating output data on GPU
 	int i;
 	float* resGPU;
@@ -78,18 +79,25 @@ int main(int argc, char ** argv)
     CUDA_SAFE_CALL(cudaEventRecord(start, 0));
 
     // Execute kernel
-    summation_kernel<<<blocks_in_grid, threads_per_block>>>(data_size/num_threads, resGPU);
+    summation_kernel<<<blocks_in_grid, threads_per_block, threads_per_block*sizeof(float)>>>(data_size/num_threads, resGPU);
 
     // Stop timer
     CUDA_SAFE_CALL(cudaEventRecord(stop, 0));
     CUDA_SAFE_CALL(cudaEventSynchronize(stop));
 
     // Get results back
-	if (cudaMemcpy(data_out_cpu, resGPU, sizeof(float)*num_threads, cudaMemcpyDeviceToHost) != cudaSuccess) {printf("erreur recopie resultat vers CPU"); exit(0);}
-	
+	// Version calcul CPU if (cudaMemcpy(data_out_cpu, resGPU, sizeof(float)*num_threads, cudaMemcpyDeviceToHost) != cudaSuccess) {printf("erreur recopie resultat vers CPU"); exit(0);}
+	if (cudaMemcpy(data_out_cpu, resGPU, sizeof(float)*blocks_in_grid, cudaMemcpyDeviceToHost) != cudaSuccess) {printf("erreur recopie resultat vers CPU"); exit(0);}
+
 	// Finish reduction
-    float sum = 0.;
+    
+	float sum = 0.;
+	/* Version calcul CPU
     for (i=num_threads-1; i>=0; i--){
+		sum += data_out_cpu[i];
+	}
+	*/
+	for (i=blocks_in_grid-1; i>=0; i--){
 		sum += data_out_cpu[i];
 	}
 	

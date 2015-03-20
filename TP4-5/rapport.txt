@@ -1,3 +1,11 @@
 2) dans le cas decroissant, on commence par aditionner/soustraire les nombres les plus petits contrairement au cas inverse ou l'arrondi induit une imprécision.
 
 3) soit un thread calcule un bloc continu de la série soit on divise la serie de taille n en m parties et chaque thread calcule l'element num_thread de chaque partie.
+
+6) Sur CPU (version descendante) on a un temps d'exécution de 0.95 s avec un résultat de 0.693137 alors que sur GPU on obtient un temps d'exécution de 0.189 sec avec un résultat de 0.693147. En dédiant le calcul au GPU, on obtient une vitesse d'exécution plus rapide car le processeur du GPU est dédié "uniquement" à cette tâche (contrairement au traitement via CPU). Le GPU est d'autant plus rapide qu'il effectue plusieurs calculs en parallèle.
+En utilisant le calcul par rang, on obtien un temps d'exécution de 0.216 s et un résultat de 0.703252. Cette méthode est moins précise pour les mêmes raisons que présenté en question 2.
+
+7) Quand on utilise un nombre de threads trop petit, on sous-exploite nos capacités de calcul (augmentation du temps d'exécution). Dans le cas contraire, on atteind le "seuil de parallèlisme" de notre carte et les threads en trop n'apportent rien voir ralentissent l'exécution à cause de la synchronisation.
+Par conséquent les valeurs par défaut conviennent à un temps d'exécution optimal (threads/bloc = 128 et nombre de blocs = 8)
+
+8)

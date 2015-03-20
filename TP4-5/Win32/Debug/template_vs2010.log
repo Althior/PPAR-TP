@@ -1,9 +1,9 @@
-﻿Build started 13/03/2015 16:03:30.
-     1>Project "H:\PPAR\TP\TP4-5\gpu_lab1_2\template_vs2010.vcxproj" on node 2 (build target(s)).
+﻿Build started 20/03/2015 15:54:17.
+     1>Project "H:\PPAR\TP\TP4-5\template_vs2010.vcxproj" on node 2 (build target(s)).
      1>InitializeBuildStatus:
-         Creating "Win32/Debug/summation.unsuccessfulbuild" because "AlwaysCreate" was specified.
+         Touching "Win32/Debug/summation.unsuccessfulbuild".
        AddCudaCompileDeps:
-         C:\Program Files\Microsoft Visual Studio 10.0\VC\bin\cl.exe /E /nologo /showIncludes /TP /D__CUDACC__ /DWIN32 /D_MBCS /I./ /I../../common/inc /I"c:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include" /I"c:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\bin" /I"c:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include" /I. /FIcuda_runtime.h /c H:\PPAR\TP\TP4-5\gpu_lab1_2\summation.cu 
+         C:\Program Files\Microsoft Visual Studio 10.0\VC\bin\cl.exe /E /nologo /showIncludes /TP /D__CUDACC__ /DWIN32 /D_MBCS /I./ /I../../common/inc /I"c:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include" /I"c:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\bin" /I"c:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include" /I. /FIcuda_runtime.h /c H:\PPAR\TP\TP4-5\summation.cu 
        AddCudaCompileDeps:
        Skipping target "AddCudaCompileDeps" because all output files are up-to-date with respect to the input files.
        AddCudaCompilePropsDeps:
@@ -12,35 +12,35 @@
        Skipping target "AddCudaCompilePropsDeps" because all output files are up-to-date with respect to the input files.
        CudaBuild:
          Compiling CUDA source file summation.cu...
-         cmd.exe /C "C:\Users\12007163\AppData\Local\Temp\tmp9e48b4cd59a442adb979b60cb47ae649.cmd"
-         "c:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\bin\nvcc.exe" -gencode=arch=compute_10,code=\"sm_10,compute_10\" --use-local-env --cl-version 2010 -ccbin "C:\Program Files\Microsoft Visual Studio 10.0\VC\bin"  -I"./" -I"../../common/inc" -I"c:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include" -I"c:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include"  -G   --keep-dir "Debug" -maxrregcount=0  --machine 32 --compile  -g   -DWIN32 -D_MBCS -Xcompiler "/EHsc /W3 /nologo /Od /Zi /RTC1 /MTd  " -o "Win32/Debug/summation.cu.obj" "H:\PPAR\TP\TP4-5\gpu_lab1_2\summation.cu"
+         cmd.exe /C "C:\Users\12007163\AppData\Local\Temp\tmpca903586f3634f5ab5bbe981aa8e4a2a.cmd"
+         "c:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\bin\nvcc.exe" -gencode=arch=compute_10,code=\"sm_10,compute_10\" --use-local-env --cl-version 2010 -ccbin "C:\Program Files\Microsoft Visual Studio 10.0\VC\bin"  -I"./" -I"../../common/inc" -I"c:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include" -I"c:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include"  -G   --keep-dir "Debug" -maxrregcount=0  --machine 32 --compile  -g   -DWIN32 -D_MBCS -Xcompiler "/EHsc /W3 /nologo /Od /Zi /RTC1 /MTd  " -o "Win32/Debug/summation.cu.obj" "H:\PPAR\TP\TP4-5\summation.cu"
          
-         H:\PPAR\TP\TP4-5\gpu_lab1_2>"c:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\bin\nvcc.exe" -gencode=arch=compute_10,code=\"sm_10,compute_10\" --use-local-env --cl-version 2010 -ccbin "C:\Program Files\Microsoft Visual Studio 10.0\VC\bin"  -I"./" -I"../../common/inc" -I"c:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include" -I"c:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include"  -G   --keep-dir "Debug" -maxrregcount=0  --machine 32 --compile  -g   -DWIN32 -D_MBCS -Xcompiler "/EHsc /W3 /nologo /Od /Zi /RTC1 /MTd  " -o "Win32/Debug/summation.cu.obj" "H:\PPAR\TP\TP4-5\gpu_lab1_2\summation.cu" 
+         H:\PPAR\TP\TP4-5>"c:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\bin\nvcc.exe" -gencode=arch=compute_10,code=\"sm_10,compute_10\" --use-local-env --cl-version 2010 -ccbin "C:\Program Files\Microsoft Visual Studio 10.0\VC\bin"  -I"./" -I"../../common/inc" -I"c:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include" -I"c:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include"  -G   --keep-dir "Debug" -maxrregcount=0  --machine 32 --compile  -g   -DWIN32 -D_MBCS -Xcompiler "/EHsc /W3 /nologo /Od /Zi /RTC1 /MTd  " -o "Win32/Debug/summation.cu.obj" "H:\PPAR\TP\TP4-5\summation.cu" 
          summation.cu
-     1>H:/PPAR/TP/TP4-5/gpu_lab1_2/summation.cu(67): warning : variable "results_size" was declared but never referenced
+     1>H:/PPAR/TP/TP4-5/summation.cu(67): warning : variable "results_size" was declared but never referenced
          
-         tmpxft_00001118_00000000-2_summation.cudafe1.gpu
-         tmpxft_00001118_00000000-7_summation.cudafe2.gpu
+         tmpxft_00000e10_00000000-2_summation.cudafe1.gpu
+         tmpxft_00000e10_00000000-7_summation.cudafe2.gpu
          summation.cu
-     1>H:/PPAR/TP/TP4-5/gpu_lab1_2/summation.cu(67): warning : variable "results_size" was declared but never referenced
+     1>H:/PPAR/TP/TP4-5/summation.cu(67): warning : variable "results_size" was declared but never referenced
          
-         tmpxft_00001118_00000000-2_summation.cudafe1.cpp
-         tmpxft_00001118_00000000-12_summation.ii
-         Deleting file "tmpxft_00001118_00000000-8_summation.cpp3.o".
+         tmpxft_00000e10_00000000-2_summation.cudafe1.cpp
+         tmpxft_00000e10_00000000-12_summation.ii
+         Deleting file "tmpxft_00000e10_00000000-8_summation.cpp3.o".
        CudaBuild:
        Skipping target "CudaBuild" because all output files are up-to-date with respect to the input files.
        Link:
-         C:\Program Files\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"win32/Debug//summation.exe" /NOLOGO /LIBPATH:"c:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\lib\Win32" /LIBPATH:../../common/lib/Win32 cudart.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Win32/Debug/summation.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"H:\PPAR\TP\TP4-5\gpu_lab1_2\win32\Debug\summation.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"win32/Debug/summation.lib" /MACHINE:X86 Win32/Debug/summation.cu.obj
+         C:\Program Files\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"win32/Debug//summation.exe" /NOLOGO /LIBPATH:"c:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\lib\Win32" /LIBPATH:../../common/lib/Win32 cudart.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"Win32/Debug/summation.exe.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"H:\PPAR\TP\TP4-5\win32\Debug\summation.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"win32/Debug/summation.lib" /MACHINE:X86 Win32/Debug/summation.cu.obj
          Win32/Debug/utils.cu.obj
          LINK : win32/Debug//summation.exe not found or not built by the last incremental link; performing full link
-         template_vs2010.vcxproj -> H:\PPAR\TP\TP4-5\gpu_lab1_2\win32/Debug/summation.exe
+         template_vs2010.vcxproj -> H:\PPAR\TP\TP4-5\win32/Debug/summation.exe
        Manifest:
          C:\Program Files\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /outputresource:"win32/Debug//summation.exe;#1" /manifest Win32/Debug/summation.exe.intermediate.manifest
        FinalizeBuildStatus:
          Deleting file "Win32/Debug/summation.unsuccessfulbuild".
          Touching "Win32/Debug/summation.lastbuildstate".
-     1>Done Building Project "H:\PPAR\TP\TP4-5\gpu_lab1_2\template_vs2010.vcxproj" (build target(s)).
+     1>Done Building Project "H:\PPAR\TP\TP4-5\template_vs2010.vcxproj" (build target(s)).
 
 Build succeeded.
 
-Time Elapsed 00:00:10.03
+Time Elapsed 00:00:07.42
