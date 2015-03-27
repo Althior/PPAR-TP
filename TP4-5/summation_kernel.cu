@@ -60,4 +60,18 @@ __global__ void summation_kernel(int data_size, float * data_out)
 	*/
 }
 
+// GPU kernel
+__global__ void second_summation_kernel(float *data, float *res)
+{
+	unsigned int i;
+	float temp = 0.0;
+
+	for(i=0; i<blockDim.x; i++){
+
+		temp += data[i];
+	}
+
+	*res = temp;
+}
+
 

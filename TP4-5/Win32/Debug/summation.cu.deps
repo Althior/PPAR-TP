@@ -235,8 +235,8 @@ c:\program files\nvidia gpu computing toolkit\cuda\v5.0\include\host_defines.h
 c:\program files\nvidia gpu computing toolkit\cuda\v5.0\include\vector_functions.h
 c:\program files\nvidia gpu computing toolkit\cuda\v5.0\include\device_launch_parameters.h
 c:\program files\nvidia gpu computing toolkit\cuda\v5.0\include\vector_types.h
-h:\ppar\tp\tp4-5\utils.h
+h:\m1\s2\ppar-tp\tp4-5\utils.h
 C:\Program Files\Microsoft Visual Studio 10.0\VC\include\stdio.h
 C:\Program Files\Microsoft Visual Studio 10.0\VC\include\crtdefs.h
 C:\Program Files\Microsoft Visual Studio 10.0\VC\include\swprintf.inl
-h:\ppar\tp\tp4-5\summation_kernel.cu
+h:\m1\s2\ppar-tp\tp4-5\summation_kernel.cu
