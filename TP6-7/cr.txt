@@ -1,0 +1,6 @@
+2) On lit 9 fois pour une cellule. Non elles sont déordonnées.
+3) 1 bloc = 128 threads. Endroits lus par un bloc = 390 (si bloc en une dimension)
+4) bloc (64,2) = 264
+   bloc (32,4) = 204
+   bloc (16,8) = 180
+Plus le bloc à une forme "carré", moins il y a de lecture.
