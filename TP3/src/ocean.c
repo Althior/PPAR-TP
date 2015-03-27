@@ -229,7 +229,7 @@ int main (int argc, char * argv[])
 	int nbS_Nord, nbT_Nord, nbS_Sud, nbT_Sud; // Nombre de poissons à injecter pour les voisins
 	int injSN, injSS, injTN, injTS; // Nombres de poissons à injecter
 
-	// Création du type MPI_FISH
+	// Création et commit du type MPI_FISH
  	int tailleChamp[2] = {1,1};
 	MPI_Aint decChamp[2] = {0,1};
 	MPI_Datatype typeChamp[2] = {MPI_CHAR, MPI_CHAR};
@@ -249,7 +249,7 @@ int main (int argc, char * argv[])
 		exit(1);
 	}
 
-	// Allocation de l'ocean & affichage
+	// Allocation de l'ocean & affichage de départ
 	if (rang == 0){
 
  		ocean = (fish_t *)malloc(N*M*sizeof(fish_t));
@@ -270,7 +270,7 @@ int main (int argc, char * argv[])
   for (i = 0; i < WALL; i++) {
 
     /* On divise l'océan selon le nombre de processeurs, chaque processeur possède une "macro-ligne" */
-	if(MPI_Scatter(ocean, (N*M)/nbproc, MPI_FISH, oceanrec, N*M/nbproc, MPI_FISH, 0, MPI_COMM_WORLD) != MPI_SUCCESS){
+	if(MPI_Scatter(ocean, (N/nbproc)*M, MPI_FISH, oceanrec, (N/nbproc)*M, MPI_FISH, 0, MPI_COMM_WORLD) != MPI_SUCCESS){
 	
 		 fprintf(stderr, "Erreur lors du découpage de l'océan entre processus\n");
 		 MPI_Finalize();
@@ -280,7 +280,7 @@ int main (int argc, char * argv[])
     usleep(STEP);
     update_ocean_part(oceanrec, N/nbproc, M, &nbS_Nord, &nbT_Nord, &nbS_Sud, &nbT_Sud);
 
-    // Envoi requins/thons aux voisins
+    // Envoi requins/thons à injecter pour les voisins
     if(MPI_Isend(&nbS_Nord, 1, MPI_INT, procprec, 0, MPI_COMM_WORLD, &myRequest) != MPI_SUCCESS){
     
     	fprintf(stderr, "Erreur lors de l'envoi du premier message\n");
@@ -309,7 +309,7 @@ int main (int argc, char * argv[])
 		exit(1);
     }
 
-    // Reception
+    // Réception des poissons à injecter
     MPI_Recv(&injSN, 1, MPI_INT, procprec, 0, MPI_COMM_WORLD, &status) != MPI_SUCCESS){
     
     	fprintf(stderr, "Erreur lors de la réception du premier message\n");
@@ -340,10 +340,15 @@ int main (int argc, char * argv[])
 
     // Remise des poissons
 	inject_ocean2(oceanrec, N/nbproc, M, injSN+injSS, injTN+injTS);
-
-	// Synchroniser ici
 	
-	MPI_Gather(oceanrec, N*M/nbproc, MPI_FISH, ocean, N*M/nbproc, MPI_FISH, 0, MPI_COMM_WORLD);
+	// TODO Synchro si besoi
+	
+	if(MPI_Gather(oceanrec, N*M/nbproc, MPI_FISH, ocean, N*M/nbproc, MPI_FISH, 0, MPI_COMM_WORLD) != MPI_SUCCESS){
+	
+		fprintf(stderr, "Erreur lors du rassemblement des parties de l'océan");
+		MPI_Finalize();
+		exit(1);
+	}
 
     // Affichage
     if(rang == 0){
@@ -354,10 +359,11 @@ int main (int argc, char * argv[])
     }
   }
 
-  if (rang == 0) {
-  
-  	free(ocean);
-  }
+	
+	if(rang == 0) {
+
+		free(ocean);
+	}
 
 	free(oceanrec);
 	MPI_Finalize();
