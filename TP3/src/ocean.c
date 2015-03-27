@@ -9,60 +9,23 @@
 /* constants for the ocean */
 #define N 40
 #define M 20
-#define WALL 3
+#define WALL 100
 #define STEP 150000
-#define RATIO 50
+#define RATIO 30
+
+/* Utiliser mminimum 4 processus pour faire fonctionner ce programme (sinon précédent = suivant et non-géré) */
 
 void update_ocean_part(fish_t *ocean, int n, int m, int *ns_north, int *nt_north, int *ns_south, int *nt_south);
 void inject_ocean(fish_t *ocean, int n, int m, int ns, int nt);
-void inject_ocean2(fish_t *ocean, int n, int m, int ns, int nt);
 
-
-/*
-  Injecte un nombre de requins et thons dans un océan (sur des emplacements libres)
-  On pourrait parcourir de manière itérative l'océan pour trouver un emplacement libre à coup sûr s'il en existe un.
-  Cependant, pour éviter un placement systématique, on préfère utiliser un rand() avec un risque de ne pas trouver d'emplacement libre s'il en reste peu.
-*/
-void inject_ocean(fish_t *ocean, int n, int m, int ns, int nt){
-
-  int rand_i, rand_j, nbTentatives = 0;
-
-  // A partir de 500 tentatives infructeuses on considère qu'il n'y a plus de places
-  while( (ns != 0 && nt != 0) && nbTentatives < 5000){
-
-    rand_i = rand() % n;
-    rand_j = rand() % m;
-
-    // Emplacement libre, on remplace
-    if(ocean[rand_i*m+rand_j].type == 'F'){
-
-      if(nt){
-
-        ocean[rand_i*m+rand_j].type = 'T';
-        nt--;
-      }
-      else{
-
-        ocean[rand_i*m+rand_j].type = 'S';
-        ns--;
-        printf("(%i,%i)\n", rand_i, rand_j);
-        exit(0);
-      }
-      nbTentatives = 0;
-    }
-    else{
-
-      nbTentatives++;
-    }
-  }
-}
+int rang, nbproc;
 
 /* Injection océan "sûre" */
-void inject_ocean2(fish_t *ocean, int n, int m, int ns, int nt){
+void inject_ocean(fish_t *ocean, int n, int m, int ns, int nt){
 
 	int i, j; 
 
-	printf("%i s et %i t\n", ns, nt);
+	//printf("%i requins et %i thons a injecter pour le processus %i\n", ns, nt, rang);
 
 	for(i=0; i<n && (ns != 0 || nt != 0); i++){
 
@@ -72,16 +35,19 @@ void inject_ocean2(fish_t *ocean, int n, int m, int ns, int nt){
 			
 				if(ocean[i*m+j].type == 'F' || ocean[i*m+j].type == 'T'){
 				
+					//printf("Injection d'un requin position (%i,%i) par le processus %i\n", i, j, rang);
 					ocean[i*m+j].type = 'S';
+					ocean[i*m+j].moved =1;
 				  	ns--;
 				}
 			}
 			else if(nt > 0){
 			
-			
 				if(ocean[i*m+j].type == 'F'){
 				
+					//printf("Injection d'un thon en position (%i,%i) par le processus %i\n", i, j, rang);
 					ocean[i*m+j].type = 'T';
+					ocean[i*m+j].moved = 1;
 				  	nt--;
 				}
 			}
@@ -89,7 +55,7 @@ void inject_ocean2(fish_t *ocean, int n, int m, int ns, int nt){
 	}
 }
 
-/* Met à jour une section de l'océan général */
+/* Met a jour une section de l'océan général */
 void update_ocean_part(fish_t *ocean, int n, int m, int *ns_north, int *nt_north, int *ns_south, int *nt_south)
 {
 
@@ -103,7 +69,7 @@ void update_ocean_part(fish_t *ocean, int n, int m, int *ns_north, int *nt_north
     for (j = 0; j < m; j++)
       ocean[i*m+j].moved = 0;
 
-  /* Init. des poissons à transmettre aux voisins */
+  /* Init. des poissons a transmettre aux voisins */
   *ns_north = 0;
   *ns_south = 0;
   *nt_north = 0;
@@ -121,7 +87,7 @@ void update_ocean_part(fish_t *ocean, int n, int m, int *ns_north, int *nt_north
         rd = rand() % 100;
         if (rd < 25) { /* -> N */
           next_i = i - 1;
-          if (next_i < 0) {	estSorti = 1; }
+          if (next_i == -1) { estSorti = 1; }
           next_j = j;
         }
         else if (rd < 50) { /* -> E */
@@ -130,7 +96,7 @@ void update_ocean_part(fish_t *ocean, int n, int m, int *ns_north, int *nt_north
         }
         else if (rd < 75) { /* -> S */
           next_i = (i + 1);
-          if (next_i >= n) { estSorti = 1; }
+          if (next_i == n) { estSorti = 1; }
           next_j = j;
         }
         else { /* -> W */
@@ -138,12 +104,12 @@ void update_ocean_part(fish_t *ocean, int n, int m, int *ns_north, int *nt_north
           next_j = (j-1) % m;
           if (next_j == -1) next_j = m - 1;
         }
-
+		
 		// Le poisson n'est plus dans la partie de l'océan
-        if (estSorti) {
+        if (estSorti && (ocean[i*m+j].type == 'S' || ocean[i*m+j].type == 'T')) {
 
           // Envoyer le poisson au voisin prédescesseur
-          if (next_i < 0) {
+          if (next_i == -1) {
 
 		        switch (ocean[i*m+j].type){
 
@@ -157,7 +123,7 @@ void update_ocean_part(fish_t *ocean, int n, int m, int *ns_north, int *nt_north
 		        }
           }
           // Envoyer le poisson au voisin successeur
-          else if (next_i > n) {
+          else if (next_i == n) {
 
 		        switch (ocean[i*m+j].type) {
 
@@ -178,7 +144,9 @@ void update_ocean_part(fish_t *ocean, int n, int m, int *ns_north, int *nt_north
           /* if I am a shark -- I move if no sharks is already here
              and eats tuna if some (implicit) */
           if (ocean[i*m+j].type == 'S'){
-            if (ocean[next_i*m+next_j].type != 'S') {
+          
+          	if (ocean[next_i*m+next_j].type != 'S') {
+            
               ocean[next_i*m+next_j].type = 'S';
               ocean[next_i*m+next_j].moved = 1;
               ocean[i*m+j].type = 'F';
@@ -186,13 +154,17 @@ void update_ocean_part(fish_t *ocean, int n, int m, int *ns_north, int *nt_north
           } /* fi 'S' */
             /* If I am a tuna, I move whenever it's free */
           else if (ocean[i*m+j].type == 'T'){
+            
             if (ocean[next_i*m+next_j].type == 'F'){
+           
               ocean[next_i*m+next_j].type = 'T';
               ocean[next_i*m+next_j].moved = 1;
               ocean[i*m+j].type = 'F';
             }
           } /* fi 'T' */
         } /* fi estSorti */
+        
+        //printf("\n");
       } /* fi !moved */
     } /* for j */
   } /* for i */
@@ -200,7 +172,7 @@ void update_ocean_part(fish_t *ocean, int n, int m, int *ns_north, int *nt_north
 
 int main (int argc, char * argv[])
 {
-	int rang, nbproc, i;
+	int i;
   	MPI_Status status;
 	MPI_Request myRequest;
 	
@@ -210,6 +182,11 @@ int main (int argc, char * argv[])
 
 	fish_t *ocean;
 
+	if(rang == 0){
+	
+		printf("Lancement du programme avec %i processus\n", nbproc);
+	}
+	
 	// Calcul processeur suivant/precedent
 	int procprec = (rang-1)%nbproc;
 	if (procprec == -1) procprec = nbproc - 1;
@@ -226,8 +203,8 @@ int main (int argc, char * argv[])
 		exit(1);
 	}
 
-	int nbS_Nord, nbT_Nord, nbS_Sud, nbT_Sud; // Nombre de poissons à injecter pour les voisins
-	int injSN, injSS, injTN, injTS; // Nombres de poissons à injecter
+	int nbS_Nord, nbT_Nord, nbS_Sud, nbT_Sud; // Nombre de poissons a injecter pour les voisins
+	int injSN = 0, injSS = 0, injTN = 0, injTS = 0; // Nombres de poissons a injecter
 
 	// Création et commit du type MPI_FISH
  	int tailleChamp[2] = {1,1};
@@ -288,57 +265,58 @@ int main (int argc, char * argv[])
 		exit(1);
     }
     
-    MPI_Isend(&nbT_Nord, 1, MPI_INT, procprec, 0, MPI_COMM_WORLD, &myRequest) != MPI_SUCCESS){
+    if(MPI_Isend(&nbT_Nord, 1, MPI_INT, procprec, 0, MPI_COMM_WORLD, &myRequest) != MPI_SUCCESS){
     
     	fprintf(stderr, "Erreur lors de l'envoi du second message\n");
 		MPI_Finalize();
 		exit(1);
     }
-    
-    MPI_Isend(&nbS_Sud, 1, MPI_INT, procsuivant, 0, MPI_COMM_WORLD, &myRequest) != MPI_SUCCESS){
-    
-    	fprintf(stderr, "Erreur lors de l'envoi du troisième message\n");
-		MPI_Finalize();
-		exit(1);
-    }
-    
-    MPI_Isend(&nbT_Sud, 1, MPI_INT, procsuivant, 0, MPI_COMM_WORLD, &myRequest) != MPI_SUCCESS){
-    
-    	fprintf(stderr, "Erreur lors de l'envoi du quatrième message\n");
-		MPI_Finalize();
-		exit(1);
-    }
 
-    // Réception des poissons à injecter
-    MPI_Recv(&injSN, 1, MPI_INT, procprec, 0, MPI_COMM_WORLD, &status) != MPI_SUCCESS){
+	if(MPI_Isend(&nbS_Sud, 1, MPI_INT, procsuivant, 0, MPI_COMM_WORLD, &myRequest) != MPI_SUCCESS){
+	
+		fprintf(stderr, "Erreur lors de l'envoi du troisième message\n");
+		MPI_Finalize();
+		exit(1);
+	}
+	
+	if(MPI_Isend(&nbT_Sud, 1, MPI_INT, procsuivant, 0, MPI_COMM_WORLD, &myRequest) != MPI_SUCCESS){
+	
+		fprintf(stderr, "Erreur lors de l'envoi du quatrième message\n");
+		MPI_Finalize();
+		exit(1);
+	}
+	
+    // Reception
+    if(MPI_Recv(&injSN, 1, MPI_INT, procprec, 0, MPI_COMM_WORLD, &status) != MPI_SUCCESS){
     
     	fprintf(stderr, "Erreur lors de la réception du premier message\n");
 		MPI_Finalize();
 		exit(1);
     }
     
-    MPI_Recv(&injTN, 1, MPI_INT, procprec, 0, MPI_COMM_WORLD, &status) != MPI_SUCCESS){
+    if(MPI_Recv(&injTN, 1, MPI_INT, procprec, 0, MPI_COMM_WORLD, &status) != MPI_SUCCESS){
     
     	fprintf(stderr, "Erreur lors de la réception du deuxième message\n");
 		MPI_Finalize();
 		exit(1);
     }
-    
-    MPI_Recv(&injSS, 1, MPI_INT, procsuivant, 0, MPI_COMM_WORLD, &status) != MPI_SUCCESS){
-    
-    	fprintf(stderr, "Erreur lors de la réception du troisième message\n");
-		MPI_Finalize();
-		exit(1);
-    }
-    
-    MPI_Recv(&injTS, 1, MPI_INT, procsuivant, 0, MPI_COMM_WORLD, &status) != MPI_SUCCESS){
-    
-    	fprintf(stderr, "Erreur lors de la réception du quatrième message\n");
-		MPI_Finalize();
-		exit(1);
-    }
 
+	if(MPI_Recv(&injSS, 1, MPI_INT, procsuivant, 0, MPI_COMM_WORLD, &status) != MPI_SUCCESS){
+	
+		fprintf(stderr, "Erreur lors de la réception du troisième message\n");
+		MPI_Finalize();
+		exit(1);
+	}
+	
+	if(MPI_Recv(&injTS, 1, MPI_INT, procsuivant, 0, MPI_COMM_WORLD, &status) != MPI_SUCCESS){
+	
+		fprintf(stderr, "Erreur lors de la réception du quatrième message\n");
+		MPI_Finalize();
+		exit(1);
+	}
+	
     // Remise des poissons
+<<<<<<< HEAD
 	inject_ocean2(oceanrec, N/nbproc, M, injSN+injSS, injTN+injTS);
 	
 	// TODO Synchro si besoi
@@ -346,6 +324,13 @@ int main (int argc, char * argv[])
 	if(MPI_Gather(oceanrec, N*M/nbproc, MPI_FISH, ocean, N*M/nbproc, MPI_FISH, 0, MPI_COMM_WORLD) != MPI_SUCCESS){
 	
 		fprintf(stderr, "Erreur lors du rassemblement des parties de l'océan");
+=======
+	inject_ocean(oceanrec, N/nbproc, M, injSN+injSS, injTN+injTS);
+
+	if(MPI_Gather(oceanrec, N*M/nbproc, MPI_FISH, ocean, N*M/nbproc, MPI_FISH, 0, MPI_COMM_WORLD) != MPI_SUCCESS){
+	
+		fprintf(stderr, "Erreur lors de fusions des parties d'océan\n");
+>>>>>>> 56c40fc8e95950b5c2276a5812784033038675eb
 		MPI_Finalize();
 		exit(1);
 	}
@@ -355,7 +340,6 @@ int main (int argc, char * argv[])
 
       printf(CLS "\n");
       display_ocean(ocean, N, M);
-      printf("%i\n", i);
     }
   }
 
