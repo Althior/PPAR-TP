@@ -22,29 +22,57 @@ __global__ void life_kernel(int * source_domain, int * dest_domain,
     int ty = blockIdx.y;
     
 	// copier mémoire globale dans la mémoire partagée pour que les threads y accedent par la suite
+	// Bloc = 8*8 threads -> 100 lectures (10*10) -> |sdata| = 100
 	extern __shared__ int sdata[];
-
+	int sdataDim = 10;
+	
 	// chaque thread lit sa case
-	sdata[] = read_cell(source_domain, tx, ty, 0, 0, domain_x, domain_y);
+	int myself = read_cell(source_domain, tx, ty, 0, 0, domain_x, domain_y);
+	
+	int decY;
+	if ( (threadIdx.x % blockDim.x) == 0 ) { decY = (threadIdx.x / blockDim.x) + 1; }	
+	sdata[(sdataDim*decY + 1 + (threadIdx.x % blockDim.x))] = myself;
 	
 	// initialiser 4 variables par thread: haut bas gauche droite
-	// combinaison pour les diags
+	int haut, bas, gauche, droite;
+	haut   = threadIdx.x < blocDim.x;
+	bas    = threadIdx.x >= blocDim.x * (blocDim.y -1);
+	gauche = (threadIdx.x % blockDim.x) == 0;
+	droite = ((threadIdx.x - 1) % blockDim.x) == 0;
 	
-	// si en bordure il lit à l'extérieur
-	if ((threadIdx.x % blockDim.x) == 0) {
-		// lecture à gauche
-	} 
-	if (((threadIdx.x - 1) % blockDim.x) == 0) {
-		// lecture à droite
-	}
-	if (threadIdx.x < blocDim.x) {
+	// si en bordure on lit à l'exterieur
+	if (haut) {
 		// lecture en haut
+		sdata[?] = read_cell(source_domain, tx, ty, 0, -1, domain_x, domain_y);
+		if (gauche) {
+			// lecture haut-gauche
+			sdata[?] = read_cell(source_domain, tx, ty, -1, -1, domain_x, domain_y);
+		}
+		if (droite) {
+			// lecture haut-droite
+			sdata[?] = read_cell(source_domain, tx, ty, 1, -1, domain_x, domain_y);
+		}
 	}
-	if (threadIdx.x >= blocDim.x * (blocDim.y -1)) {
+	if (bas) {
 		// lecture en bas
+		sdata[?] = read_cell(source_domain, tx, ty, 0, 1, domain_x, domain_y);
+		if (gauche) {
+			// lecture bas-gauche
+			sdata[?] = read_cell(source_domain, tx, ty, -1, 1, domain_x, domain_y);
+		}
+		if (droite) {
+			// lecture bas-droite
+			sdata[?] = read_cell(source_domain, tx, ty, 1, 1, domain_x, domain_y);
+		}
 	}
-	
-	
+	if (gauche) {
+		// lecture à gauche
+		sdata[?] = read_cell(source_domain, tx, ty, -1, 0, domain_x, domain_y);
+	} 
+	if (droite) {
+		// lecture à droite
+		sdata[?] = read_cell(source_domain, tx, ty, 1, 0, domain_x, domain_y);
+	}	
 	
 	/*
 	sdata[threadIdx.x] = read_cell(source_domain, tx, ty, 0, -1, domain_x, domain_y);
@@ -54,7 +82,7 @@ __global__ void life_kernel(int * source_domain, int * dest_domain,
 	__syncthreads();
 	
     // Read cell
-    int myself = read_cell(sdata, tx, ty, 0, 0, domain_x, 3);
+    // int myself = read_cell(sdata, tx, ty, 0, 0, domain_x, 3);
     
     // Read the 8 neighbors and count number of blue and red
 	int i;
@@ -63,53 +91,42 @@ __global__ void life_kernel(int * source_domain, int * dest_domain,
 	// parcours des voisins
 	for (i=-1; i<2; i++){
 	
-		valTemp = read_cell(sdata, tx, ty, i, -1, domain_x, 3);
+		valTemp = read_cell(sdata, tx, ty, i, -1, sdataDim, sdataDim);
 		switch(valTemp){
-			
 			case 1:	
 				count_red++;
 				break;
-
 			case 2:
 				count_blue++;
 				break;
 		}
 		
-		valTemp = read_cell(sdata, tx, ty, i, 1, domain_x, 3);
-		
+		valTemp = read_cell(sdata, tx, ty, i, 1, sdataDim, sdataDim);
 		switch(valTemp){
-			
 			case 1:	
 				count_red++;
 				break;
-
 			case 2:
 				count_blue++;
 				break;
 		}
 	}
 	
-	valTemp = read_cell(sdata, tx, ty, -1, 0, domain_x, 3);
-	
+	valTemp = read_cell(sdata, tx, ty, -1, 0, sdataDim, sdataDim);
 	switch(valTemp){
-			
 		case 1:	
 			count_red++;
 			break;
-
 		case 2:
 			count_blue++;
 			break;
 	}
 		
-	valTemp = read_cell(sdata, tx, ty, 1, 0, domain_x, 3);
-	
+	valTemp = read_cell(sdata, tx, ty, 1, 0, sdataDim, sdataDim);
 	switch(valTemp){
-			
 		case 1:	
 			count_red++;
 			break;
-
 		case 2:
 			count_blue++;
 			break;
