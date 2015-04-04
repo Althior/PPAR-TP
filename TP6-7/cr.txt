@@ -4,3 +4,5 @@
    bloc (32,4) = 204
    bloc (16,8) = 180
 Plus le bloc à une forme "carré", moins il y a de lecture.
+
+7.43ms sans opti

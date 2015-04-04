@@ -1,4 +1,3 @@
-
 #include "utils.h"
 #include <stdlib.h>
 
@@ -15,9 +14,9 @@ int main(int argc, char ** argv)
     
     int steps = 10;
     
-    int threads_per_block = 128;
+    int threads_per_block = 64;
     int blocks_x = domain_x / (threads_per_block * cells_per_word);
-    int blocks_y = domain_y;
+    int blocks_y = 10;
     
     dim3  grid(blocks_x, blocks_y);	// CUDA grid dimensions
     dim3  threads(threads_per_block);	// CUDA block dimensions
@@ -41,7 +40,7 @@ int main(int argc, char ** argv)
     CUDA_SAFE_CALL(cudaEventRecord(start, 0));
 
     // Kernel execution
-    int shared_mem_size = 0;
+    int shared_mem_size = 3*threads_per_block*sizeof(int);
     for(int i = 0; i < steps; i++) {
 	    life_kernel<<< grid, threads, shared_mem_size >>>(domain_gpu[i%2],
 	    	domain_gpu[(i+1)%2], domain_x, domain_y);
