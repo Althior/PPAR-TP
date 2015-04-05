@@ -29,9 +29,28 @@ __global__ void life_kernel(int * source_domain, int * dest_domain,
 	// chaque thread lit sa case
 	int myself = read_cell(source_domain, tx, ty, 0, 0, domain_x, domain_y);
 	
-	int decY;
-	if ( (threadIdx.x % blockDim.x) == 0 ) { decY = (threadIdx.x / blockDim.x) + 1; }	
-	sdata[(sdataDim*decY + 1 + (threadIdx.x % blockDim.x))] = myself;
+	/*
+	Dans le cas d'un bloc 3x3:
+	bloc: x² (carré pour optimiser lectures)
+	 0 1 2
+	 3 4 5
+	 6 7 8
+	
+	sdata: (x+2)² (sdataDim=5)
+     0  1  2  3  4
+	 5| 6  7  8| 9
+	10|11 12 13|14
+	15|16 17 18|19
+	20 21 22 23 24
+	*/
+	
+	// pour avoir la composante en y
+	int decY, myloc;
+	decY = (threadIdx.x / blockDim.x) + 1; 
+	
+	// position dans sdata avec contours compris
+	myloc = sdataDim*decY + 1 + (threadIdx.x % blockDim.x);
+	sdata[myloc] = myself;
 	
 	// initialiser 4 variables par thread: haut bas gauche droite
 	int haut, bas, gauche, droite;
@@ -40,38 +59,40 @@ __global__ void life_kernel(int * source_domain, int * dest_domain,
 	gauche = (threadIdx.x % blockDim.x) == 0;
 	droite = ((threadIdx.x - 1) % blockDim.x) == 0;
 	
-	// si en bordure on lit à l'exterieur
+	// Lectures en bordure
 	if (haut) {
 		// lecture en haut
-		sdata[?] = read_cell(source_domain, tx, ty, 0, -1, domain_x, domain_y);
+		sdata[myloc-sdataDim] = read_cell(source_domain, tx, ty, 0, -1, domain_x, domain_y);
+		
 		if (gauche) {
 			// lecture haut-gauche
-			sdata[?] = read_cell(source_domain, tx, ty, -1, -1, domain_x, domain_y);
+			sdata[myloc-sdataDim-1] = read_cell(source_domain, tx, ty, -1, -1, domain_x, domain_y);
 		}
 		if (droite) {
 			// lecture haut-droite
-			sdata[?] = read_cell(source_domain, tx, ty, 1, -1, domain_x, domain_y);
+			sdata[myloc-sdataDim+1] = read_cell(source_domain, tx, ty, 1, -1, domain_x, domain_y);
 		}
 	}
 	if (bas) {
 		// lecture en bas
-		sdata[?] = read_cell(source_domain, tx, ty, 0, 1, domain_x, domain_y);
+		sdata[myloc+sdataDim] = read_cell(source_domain, tx, ty, 0, 1, domain_x, domain_y);
+		
 		if (gauche) {
 			// lecture bas-gauche
-			sdata[?] = read_cell(source_domain, tx, ty, -1, 1, domain_x, domain_y);
+			sdata[myloc+sdataDim-1] = read_cell(source_domain, tx, ty, -1, 1, domain_x, domain_y);
 		}
 		if (droite) {
 			// lecture bas-droite
-			sdata[?] = read_cell(source_domain, tx, ty, 1, 1, domain_x, domain_y);
+			sdata[myloc+sdataDim+1] = read_cell(source_domain, tx, ty, 1, 1, domain_x, domain_y);
 		}
 	}
 	if (gauche) {
 		// lecture à gauche
-		sdata[?] = read_cell(source_domain, tx, ty, -1, 0, domain_x, domain_y);
+		sdata[myloc-1] = read_cell(source_domain, tx, ty, -1, 0, domain_x, domain_y);
 	} 
 	if (droite) {
 		// lecture à droite
-		sdata[?] = read_cell(source_domain, tx, ty, 1, 0, domain_x, domain_y);
+		sdata[myloc+1] = read_cell(source_domain, tx, ty, 1, 0, domain_x, domain_y);
 	}	
 	
 	/*
@@ -150,7 +171,7 @@ __global__ void life_kernel(int * source_domain, int * dest_domain,
 	}
 	
 	// Write it in dest_domain	
-	// sych et recopie
+	// sync et recopie
 	 __syncthreads();
 
 	dest_domain[ty * domain_x + tx] = new_cell;
