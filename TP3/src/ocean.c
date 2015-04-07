@@ -6,6 +6,8 @@
 #include <mpi.h>
 #include "ocean.h"
 
+/* Aubin César & Foucault Antoine */
+
 /* constants for the ocean */
 #define N 40
 #define M 20
@@ -13,14 +15,14 @@
 #define STEP 150000
 #define RATIO 30
 
-/* Utiliser mminimum 4 processus pour faire fonctionner ce programme (sinon précédent = suivant et non-géré) */
+/* Utiliser minimum 4 processus pour faire fonctionner ce programme (sinon précédent = suivant et non-géré) */
 
 void update_ocean_part(fish_t *ocean, int n, int m, int *ns_north, int *nt_north, int *ns_south, int *nt_south);
 void inject_ocean(fish_t *ocean, int n, int m, int ns, int nt);
 
 int rang, nbproc;
 
-/* Injection océan "sûre" */
+/* Injection océan basique */
 void inject_ocean(fish_t *ocean, int n, int m, int ns, int nt){
 
 	int i, j; 
@@ -105,8 +107,8 @@ void update_ocean_part(fish_t *ocean, int n, int m, int *ns_north, int *nt_north
           if (next_j == -1) next_j = m - 1;
         }
 		
-		// Le poisson n'est plus dans la partie de l'océan
-        if (estSorti && (ocean[i*m+j].type == 'S' || ocean[i*m+j].type == 'T')) {
+		// Le poisson n'est plus dans la partie de l'océan gérée par le processus
+        if (estSorti && (ocean[i*m+j].type == 'S' || ocean[i*m+j].type == 'T') ){
 
           // Envoyer le poisson au voisin prédescesseur
           if (next_i == -1) {
@@ -137,7 +139,6 @@ void update_ocean_part(fish_t *ocean, int n, int m, int *ns_north, int *nt_north
 		        }
           }
 
-          // L'ancienne case est dorénavant vide
           ocean[i*m+j].type = 'F';
 
         } else {
@@ -203,7 +204,7 @@ int main (int argc, char * argv[])
 		exit(1);
 	}
 
-	int nbS_Nord, nbT_Nord, nbS_Sud, nbT_Sud; // Nombre de poissons a injecter pour les voisins
+	int nbS_Nord, nbT_Nord, nbS_Sud, nbT_Sud; 		// Nombre de poissons a injecter pour les voisins
 	int injSN = 0, injSS = 0, injTN = 0, injTS = 0; // Nombres de poissons a injecter
 
 	// Création du type MPI_FISH
