@@ -21,80 +21,98 @@ __global__ void life_kernel(int * source_domain, int * dest_domain,
     int tx = blockIdx.x * blockDim.x + threadIdx.x;
     int ty = blockIdx.y;
     
-	// copier mémoire globale dans la mémoire partagée pour que les threads y accedent par la suite
-	// Bloc = 8*8 threads -> 100 lectures (10*10) -> |sdata| = 100
+	// Copier depuis la mémoire globale vers la mémoire partagée pour que les threads y accèdent par la suite
+	// sdata -> Bloc = 8*8 threads -> 100 lectures (10*10) -> |sdata| = 100
 	extern __shared__ int sdata[];
-	int sdataDim = 10;
+	int sdataDim = 10; // Voir si on ne peut pas obtenir ça de manière auto
 	
-	// chaque thread lit sa case
+	// Chaque thread lit sa case
 	int myself = read_cell(source_domain, tx, ty, 0, 0, domain_x, domain_y);
 	
 	/*
-	Dans le cas d'un bloc 3x3:
-	bloc: x² (carré pour optimiser lectures)
-	 0 1 2
-	 3 4 5
-	 6 7 8
-	
-	sdata: (x+2)² (sdataDim=5)
-     0  1  2  3  4
-	 5| 6  7  8| 9
-	10|11 12 13|14
-	15|16 17 18|19
-	20 21 22 23 24
+	*	Dans le cas d'un bloc 3x3:
+	*	bloc: x² (carré pour optimiser lectures)
+	*	 0 1 2
+	*	 3 4 5
+	*	 6 7 8
+	*
+	*	sdata: (x+2)² (sdataDim=5)
+	*	 0  1  2  3  4
+	*	 5| 6  7  8| 9
+	*	10|11 12 13|14
+	*	15|16 17 18|19
+	*	20 21 22 23 24
 	*/
 	
-	// pour avoir la composante en y
+	// Position y du thread dans la shared memory
 	int decY, myloc;
-	decY = (threadIdx.x / blockDim.x) + 1; 
+	decY = (threadIdx.x / blockDim.x) + 1;
+	//decY = (threadIdx.x / sdataDim) + 1; // Mieux ?
 	
-	// position dans sdata avec contours compris
-	myloc = sdataDim*decY + 1 + (threadIdx.x % blockDim.x);
+	// Position dans sdata (avec contours compris)
+	myloc = sdataDim*decY + 1 + (threadIdx.x % blockDim.x); // +1 nécessaire ?
 	sdata[myloc] = myself;
 	
-	// initialiser 4 variables par thread: haut bas gauche droite
+	/*
+		Initialisation de 4 variables par thread : haut bas gauche droite
+		Booléens indiquant si le thread est situé en bordure du carré de cellules traité
+	*/
 	int haut, bas, gauche, droite;
-	haut   = threadIdx.x < blocDim.x;
-	bas    = threadIdx.x >= blocDim.x * (blocDim.y -1);
+	haut   = threadIdx.x < blockDim.x;
+	bas    = threadIdx.x >= blockDim.x * (blockDim.y -1);
 	gauche = (threadIdx.x % blockDim.x) == 0;
-	droite = ((threadIdx.x - 1) % blockDim.x) == 0;
+	droite = ((threadIdx.x + 1) % blockDim.x) == 0;
 	
-	// Lectures en bordure
+	/* Lectures des bordures si nécessaire */
+	
+	// Lecture en haut
 	if (haut) {
-		// lecture en haut
+	
 		sdata[myloc-sdataDim] = read_cell(source_domain, tx, ty, 0, -1, domain_x, domain_y);
 		
+		// Lecture haut-gauche
 		if (gauche) {
-			// lecture haut-gauche
+			
 			sdata[myloc-sdataDim-1] = read_cell(source_domain, tx, ty, -1, -1, domain_x, domain_y);
 		}
+		
+		// Lecture haut-droite
 		if (droite) {
-			// lecture haut-droite
+			
 			sdata[myloc-sdataDim+1] = read_cell(source_domain, tx, ty, 1, -1, domain_x, domain_y);
 		}
 	}
+	
+	// Lecture en bas
 	if (bas) {
-		// lecture en bas
+		
 		sdata[myloc+sdataDim] = read_cell(source_domain, tx, ty, 0, 1, domain_x, domain_y);
 		
+		// Lecture bas-gauche
 		if (gauche) {
-			// lecture bas-gauche
+			
 			sdata[myloc+sdataDim-1] = read_cell(source_domain, tx, ty, -1, 1, domain_x, domain_y);
 		}
+		
+		// Lecture bas-droite
 		if (droite) {
-			// lecture bas-droite
+			
 			sdata[myloc+sdataDim+1] = read_cell(source_domain, tx, ty, 1, 1, domain_x, domain_y);
 		}
 	}
+	
+	// Lecture à gauche
 	if (gauche) {
-		// lecture à gauche
+	
 		sdata[myloc-1] = read_cell(source_domain, tx, ty, -1, 0, domain_x, domain_y);
-	} 
+	}
+	
+	// Lecture à droite
 	if (droite) {
-		// lecture à droite
+		
 		sdata[myloc+1] = read_cell(source_domain, tx, ty, 1, 0, domain_x, domain_y);
 	}	
-	
+
 	/*
 	sdata[threadIdx.x] = read_cell(source_domain, tx, ty, 0, -1, domain_x, domain_y);
 	sdata[threadIdx.x+blockDim.x] = read_cell(source_domain, tx, ty, 0, 0, domain_x, domain_y);
@@ -109,7 +127,7 @@ __global__ void life_kernel(int * source_domain, int * dest_domain,
 	int i;
 	int count_blue = 0, count_red = 0, valTemp;
 	
-	// parcours des voisins
+	// Parcours des voisins du dessus et du dessous
 	for (i=-1; i<2; i++){
 	
 		valTemp = read_cell(sdata, tx, ty, i, -1, sdataDim, sdataDim);
@@ -133,6 +151,7 @@ __global__ void life_kernel(int * source_domain, int * dest_domain,
 		}
 	}
 	
+	// Voisin gauche
 	valTemp = read_cell(sdata, tx, ty, -1, 0, sdataDim, sdataDim);
 	switch(valTemp){
 		case 1:	
@@ -142,7 +161,8 @@ __global__ void life_kernel(int * source_domain, int * dest_domain,
 			count_blue++;
 			break;
 	}
-		
+	
+	// Voisin droit	
 	valTemp = read_cell(sdata, tx, ty, 1, 0, sdataDim, sdataDim);
 	switch(valTemp){
 		case 1:	
@@ -159,13 +179,13 @@ __global__ void life_kernel(int * source_domain, int * dest_domain,
 	
 	switch (myself){
 	
-	case 0: // empty cell 
-		if (num_nei == 3) { // neighbors == 3
+	case 0: // Cellule vide
+		if (num_nei == 3) { // 3 voisins
 			if (count_red < count_blue)	new_cell = 2;
 			else new_cell = 1;
 		}
 		break;
-	default: // cell survives if neighbors == 2|3
+	default: // Survie de la cellule si nbVoisins == 2||3
 		if (num_nei == 2 || num_nei == 3){ new_cell = myself;}
 		break;
 	}
