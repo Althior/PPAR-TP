@@ -110,6 +110,7 @@
       <Include>./;../../common/inc</Include>
       <Runtime>MTd</Runtime>
       <Defines>WIN32</Defines>
+      <AdditionalOptions>-Xptxas=-v %(AdditionalOptions)</AdditionalOptions>
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -197,8 +198,8 @@
   <ItemGroup>
     <CudaCompile Include="life.cu" />
     <CudaCompile Include="life_kernel.cu">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
     </CudaCompile>
     <CudaCompile Include="utils.cu">
       <CodeGeneration Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">compute_10,sm_10</CodeGeneration>

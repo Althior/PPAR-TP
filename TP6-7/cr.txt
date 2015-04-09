@@ -1,8 +1,11 @@
-2) On lit 9 fois pour une cellule. Non elles sont déordonnées.
+2) On lit 9 fois pour une cellule. Non elles sont désordonnées.
 3) 1 bloc = 128 threads. Endroits lus par un bloc = 390 (si bloc en une dimension)
 4) bloc (64,2) = 264
    bloc (32,4) = 204
    bloc (16,8) = 180
-Plus le bloc à une forme "carré", moins il y a de lecture.
+Plus le bloc à une forme "carré", moins il y a de lecture "externes".
 
 7.43ms sans opti
+
+7) Le compilateur utilise 29 registres/thread pour notre programme.
+ptxas : info : Used 29 registers, 336 bytes cmem[0]

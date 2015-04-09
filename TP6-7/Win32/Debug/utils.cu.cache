@@ -4,8 +4,8 @@ AdditionalCompilerOptions=
 AdditionalDependencies=
 AdditionalDeps=
 AdditionalLibraryDirectories=
-AdditionalOptions=
-AdditionalOptions=
+AdditionalOptions=-Xptxas=-v 
+AdditionalOptions=-Xptxas=-v 
 CInterleavedPTX=false
 CodeGeneration=compute_10,sm_10
 CodeGeneration=compute_10,sm_10
@@ -19,7 +19,7 @@ GenerateRelocatableDeviceCode=false
 GPUDebugInfo=true
 GPUDebugInfo=true
 HostDebugInfo=true
-Include=./;../../common/inc;;c:\Program Files (x86)\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include
+Include=./;../../common/inc;;c:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v5.0\include
 Inputs=
 Keep=false
 KeepDir=Debug

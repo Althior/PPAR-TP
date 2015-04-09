@@ -9,17 +9,19 @@ int main(int argc, char ** argv)
     // Definition of parameters
     int domain_x = 128;	// Multiple of threads_per_block * cells_per_word
     int domain_y = 128;
-    
+
     int cells_per_word = 1;
     
-    int steps = 10;
+    int steps = 11;
     
-    int threads_per_block = 64;
-    int blocks_x = domain_x / (threads_per_block * cells_per_word);
-    int blocks_y = 10;
+	int thread_x = 8, thread_y = thread_x;
+    int threads_per_block = thread_x * thread_y;
+	
+    int blocks_x = domain_x / thread_x;
+    int blocks_y = domain_y / thread_y;
     
-    dim3  grid(blocks_x, blocks_y);	// CUDA grid dimensions
-    dim3  threads(threads_per_block);	// CUDA block dimensions
+    dim3  grid(blocks_x, blocks_y);		// CUDA grid dimensions
+    dim3  threads(thread_x, thread_y);	// CUDA block dimensions
 
     // Allocation of arrays
     int * domain_gpu[2] = {NULL, NULL};
@@ -40,7 +42,7 @@ int main(int argc, char ** argv)
     CUDA_SAFE_CALL(cudaEventRecord(start, 0));
 
     // Kernel execution
-    int shared_mem_size = 100*sizeof(int); // (sqrt(64)+2)² * sizeof(int)
+    int shared_mem_size = ((thread_x + 2) * (thread_x + 2)) * sizeof(int);
     for(int i = 0; i < steps; i++) {
 	    life_kernel<<< grid, threads, shared_mem_size >>>(domain_gpu[i%2],
 	    	domain_gpu[(i+1)%2], domain_x, domain_y);

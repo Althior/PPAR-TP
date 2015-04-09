@@ -1,7 +1,10 @@
 __global__ void init_kernel(int * domain, int domain_x)
 {
+	int tx = blockIdx.x * blockDim.x + threadIdx.x;
+    int ty = blockIdx.y * blockDim.y + threadIdx.y;
+	
 	// Dummy initialization
-	domain[blockIdx.y * domain_x + blockIdx.x * blockDim.x + threadIdx.x]
+	domain[ty * domain_x + tx]
 		= (1664525ul * (blockIdx.x + threadIdx.y + threadIdx.x) + 1013904223ul) % 3;
 }
 
@@ -19,7 +22,7 @@ __global__ void life_kernel(int * source_domain, int * dest_domain,
     int domain_x, int domain_y)
 {
     int tx = blockIdx.x * blockDim.x + threadIdx.x;
-    int ty = blockIdx.y;
+    int ty = blockIdx.y * blockDim.y + threadIdx.y;
     
 	// Copier depuis la mémoire globale vers la mémoire partagée pour que les threads y accèdent par la suite
 	// sdata -> Bloc = 8*8 threads -> 100 lectures (10*10) -> |sdata| = 100
@@ -45,12 +48,12 @@ __global__ void life_kernel(int * source_domain, int * dest_domain,
 	*/
 	
 	// Position y du thread dans la shared memory
-	int decY, myloc;
-	decY = (threadIdx.x / blockDim.x) + 1;
-	//decY = (threadIdx.x / sdataDim) + 1; // Mieux ?
+	int decY, decX, myloc;
+	decY = threadIdx.y + 1;
+	decX = threadIdx.x + 1;
 	
 	// Position dans sdata (avec contours compris)
-	myloc = sdataDim*decY + 1 + (threadIdx.x % blockDim.x); // +1 nécessaire ?
+	myloc = sdataDim*decY + decX;
 	sdata[myloc] = myself;
 	
 	/*
@@ -58,10 +61,10 @@ __global__ void life_kernel(int * source_domain, int * dest_domain,
 		Booléens indiquant si le thread est situé en bordure du carré de cellules traité
 	*/
 	int haut, bas, gauche, droite;
-	haut   = threadIdx.x < blockDim.x;
-	bas    = threadIdx.x >= blockDim.x * (blockDim.y -1);
-	gauche = (threadIdx.x % blockDim.x) == 0;
-	droite = ((threadIdx.x + 1) % blockDim.x) == 0;
+	haut   = threadIdx.y == 0;
+	bas    = threadIdx.y == blockDim.y - 1;
+	gauche = threadIdx.x == 0;
+	droite = threadIdx.x == blockDim.x - 1;
 	
 	/* Lectures des bordures si nécessaire */
 	
@@ -113,15 +116,7 @@ __global__ void life_kernel(int * source_domain, int * dest_domain,
 		sdata[myloc+1] = read_cell(source_domain, tx, ty, 1, 0, domain_x, domain_y);
 	}	
 
-	/*
-	sdata[threadIdx.x] = read_cell(source_domain, tx, ty, 0, -1, domain_x, domain_y);
-	sdata[threadIdx.x+blockDim.x] = read_cell(source_domain, tx, ty, 0, 0, domain_x, domain_y);
-	sdata[threadIdx.x+(2*blockDim.x)] = read_cell(source_domain, tx, ty, 0, 1, domain_x, domain_y);	
-	*/
 	__syncthreads();
-	
-    // Read cell
-    // int myself = read_cell(sdata, tx, ty, 0, 0, domain_x, 3);
     
     // Read the 8 neighbors and count number of blue and red
 	int i;
@@ -130,7 +125,9 @@ __global__ void life_kernel(int * source_domain, int * dest_domain,
 	// Parcours des voisins du dessus et du dessous
 	for (i=-1; i<2; i++){
 	
-		valTemp = read_cell(sdata, tx, ty, i, -1, sdataDim, sdataDim);
+		valTemp = read_cell(sdata, decX, decY, i, -1, sdataDim, sdataDim);
+		
+		// Changer le switch par une incrémentation conditionnelle ne change rien
 		switch(valTemp){
 			case 1:	
 				count_red++;
@@ -140,7 +137,7 @@ __global__ void life_kernel(int * source_domain, int * dest_domain,
 				break;
 		}
 		
-		valTemp = read_cell(sdata, tx, ty, i, 1, sdataDim, sdataDim);
+		valTemp = read_cell(sdata, decX, decY, i, 1, sdataDim, sdataDim);
 		switch(valTemp){
 			case 1:	
 				count_red++;
@@ -152,7 +149,7 @@ __global__ void life_kernel(int * source_domain, int * dest_domain,
 	}
 	
 	// Voisin gauche
-	valTemp = read_cell(sdata, tx, ty, -1, 0, sdataDim, sdataDim);
+	valTemp = read_cell(sdata, decX, decY, -1, 0, sdataDim, sdataDim);
 	switch(valTemp){
 		case 1:	
 			count_red++;
@@ -163,7 +160,7 @@ __global__ void life_kernel(int * source_domain, int * dest_domain,
 	}
 	
 	// Voisin droit	
-	valTemp = read_cell(sdata, tx, ty, 1, 0, sdataDim, sdataDim);
+	valTemp = read_cell(sdata, decX, decY, 1, 0, sdataDim, sdataDim);
 	switch(valTemp){
 		case 1:	
 			count_red++;
@@ -181,18 +178,15 @@ __global__ void life_kernel(int * source_domain, int * dest_domain,
 	
 	case 0: // Cellule vide
 		if (num_nei == 3) { // 3 voisins
-			if (count_red < count_blue)	new_cell = 2;
-			else new_cell = 1;
+
+			// Control flow reduction
+			new_cell = 1 + (count_red < count_blue);
 		}
 		break;
 	default: // Survie de la cellule si nbVoisins == 2||3
 		if (num_nei == 2 || num_nei == 3){ new_cell = myself;}
 		break;
 	}
-	
-	// Write it in dest_domain	
-	// sync et recopie
-	 __syncthreads();
 
 	dest_domain[ty * domain_x + tx] = new_cell;
 }	
