@@ -1,4 +1,5 @@
 *.o
-TP1/EX1/ex1
-TP1/EX2/ex2
-TP1/EX3/ex3
+*.pdf
+*.docx
+*.odt
+*.tmp

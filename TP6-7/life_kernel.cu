@@ -53,7 +53,7 @@ __global__ void life_kernel(int * source_domain, int * dest_domain,
 	decX = threadIdx.x + 1;
 	
 	// Position dans sdata (avec contours compris)
-	myloc = sdataDim*decY + decX;
+	myloc = decY * sdataDim + decX;
 	sdata[myloc] = myself;
 	
 	/*
